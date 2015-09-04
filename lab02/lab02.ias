@@ -1,0 +1,31 @@
+
+// costantes :
+// 0x15 -> Entrada
+// 0x16 -> 10
+// 0x17 -> 1
+// 0x18 -> 2
+// 0x19 -> k (chute)
+
+LOAD MQ,M(0x16) // coloca 10 no registrador MQ
+MUL M(0x15) // Multiplica a entrada por 10, coloca resultado em AC e MQ.
+LOAD MQ
+STOR M(0x15) // Guarda o resultado em 0x15
+DIV M(0x18) // Divide por dois ( primeiro chute)
+
+LOAD MQ
+STOR M(0x19) // salva o chute
+
+LOAD M(0x15) // carrega y
+DIV M(0x19) // Divide por k
+
+LOAD MQ // carrega o quociente em AC
+
+ADD M(0x19) // Soma k
+
+DIV M(0x18) // Divide por 2
+
+LOAD MQ
+
+STOR M(0x19)
+
+

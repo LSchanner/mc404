@@ -1,0 +1,43 @@
+
+             SystemC 2.2.0 --- Aug  8 2011 18:08:47
+        Copyright (c) 1996-2006 by all Contributors
+                    ALL RIGHTS RESERVED
+ *** A simulação está começando ***
+ArchC: -------------------- Starting Simulation --------------------
+
+@ Executando instrução no endereço 0x0000000000 (instrução à esquerda)
+@ LOAD MQ, M(X), X = 0x00016
++ AC:  0x0000000000	MQ: 0x000000000A	PC: 0x0000000000
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000000 (instrução à direita)
+@ MUL M(X), X = 0x00015
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000000
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000001 (instrução à esquerda)
+@ LOAD MQ, X = 0x00000
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000001
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000001 (instrução à direita)
+@ STOR MX, X = 0x00015
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000001
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000002 (instrução à esquerda)
+@ DIV M(X), X = 0x00018
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000002
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000002 (instrução à direita)
+@ LOAD MQ, X = 0x00000
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000002
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000003 (instrução à esquerda)
+@ STOR MX, X = 0x00019
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000003
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000003 (instrução à direita)
+@ LOAD MX, X = 0x00015
++ AC:  0x0000000000	MQ: 0x0000000000	PC: 0x0000000003
+--------------------------------------------------------------
+@ Executando instrução no endereço 0x0000000004 (instrução à esquerda)
+@ DIV M(X), X = 0x00019
+ERRO: Divisão por zero. Dividendo = 0, divisor = 0.
+ArchC: -------------------- Simulation Finished --------------------

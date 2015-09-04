@@ -1,0 +1,37 @@
+010 00 00 00 00 00 # acumulador do produto vetorial
+011 00 00 00 00 01 # constante 1 
+
+# coloca endereço do primeiro vetor na posição apropropriada 
+000 01 3FD 12 002
+
+# coloca endereço do segundo vetor na posição apropropriada 
+001 01 3FE 13 002
+
+# Carrega a posição do vetor 1, multiplica com a do vetor 2
+002 09 000 0B 000
+
+# Carrega o resultado da multiplicação em AC, soma com o acumulador
+003 0A 000 05 010
+
+# Salva o acumulador, carrega 1 em AC
+004 21 010 01 011
+
+# Soma 1 na posição do primeiro vetor e salva
+005 05 3FD 21 3FD
+
+# Carrega 1 em AC e soma com a posição do segundo vetor
+006 01 011 05 3FE 
+
+# Salva a posição do segundo vetor, carrega o tamanho do vetor
+007 21 3FE 01 3FF
+
+# Subtrai um do tamanho do vetor e salva
+008 06 011 21 3FF
+
+# Para a execução quando o tamanho chegar em 0
+009 06 011 0F 000
+
+# Carrega o resultado do acumulador, para a execução
+00A 01 010 0D 400
+
+
