@@ -1,9 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "hashtable.h"
 
 /* DECLARAÇÕES DE TIPOS */
 /* -------------------- */
+
+char empty_char = 0;
+String empty_string = &empty_char;
+
 
 typedef struct RegLista *Lista;
 typedef struct RegLista {
@@ -11,7 +16,7 @@ typedef struct RegLista {
   Lista prox;
 } RegLista;
 
-typedef struct RegBase *ImplTabela;
+typedef struct RegTabela *ImplTabela;
 typedef struct RegTabela {
   int numregs;
   Lista tabela[MaxHash];
@@ -35,29 +40,41 @@ int Espalha(String str) {
 /* Funções de Manipulação de Listas ligadas */
 
 /* Insere o Registro a em uma lista */ 
-void InsereLista(Lista lista, Registro a){
+bool InsereLista(Lista lista, Registro a){
 
-    Lista no = (RegLista*) malloc(sizeof(RegLista));
+    // Procura o elemento na lista
+    while(strcmp(lista->reg.key,a.key) < 0 && lista->prox != NULL){
+        lista = lista->prox;
+    }
 
-    /* Insere as informações no registro */
-    no->reg = a;
+    // Se o elemento já existe, ele é substituido
+    if(strcmp(lista->reg.key,a.key) == 0){
+        lista->reg.val = a.val;
+        return false;
+    }
+    else{
+        Lista no = (RegLista*) malloc(sizeof(RegLista));
 
-    /* Insere o registro na lista */
-    no->prox = lista->prox;
-    lista->prox = no;
-    
+        /* Insere as informações no registro */
+        no->reg = a;
+
+        /* Insere o registro na lista */
+        no->prox = lista->prox;
+        lista->prox = no;
+        return true;
+    }
 }
 
 /* Remove um registro de key  da lista */
-Boolean RemoveLista(Lista lista,String key){
+bool RemoveLista(Lista lista,String key){
 
      /* percorre lista até chegar ao ultimo ponto antes da remoção */
-    while(lista->prox != NULL && lista->prox->aluno.ra < ra){
+    while(lista->prox != NULL && strcmp(lista->prox->reg.key , key) < 0){
         lista = lista->prox;
     }
 
     /* ra não encontrado */
-    if(lista->prox->aluno.ra != ra){
+    if(strcmp(lista->prox->reg.key , key) > 0){
         return false;
     }
     
@@ -66,44 +83,53 @@ Boolean RemoveLista(Lista lista,String key){
     lista->prox = remov->prox;
 
     /* Libera */
-    FREE(remov->aluno.nome);
-    FREE(remov->aluno);
+    free(remov->reg.key);
+    free(remov);
     
     return true;
 }
 
 
-/* Verifica se o aluno de ra "ra" se econtra na lista, devolve os
+/* Verifica se o registro de "ra" se econtra na lista, devolve os
  * dados no ponteiro a */
-Boolean ConsultaLista(Lista lista,int ra,Aluno *a){
+bool ConsultaLista(Lista lista,String key,Registro *a){
 
     /* Percorre a lista até encontrar o nó do aluno*/
-    while(lista != NULL && lista->aluno.ra < ra){
+    while(lista != NULL && strcmp(lista->reg.key, key) < 0){
         lista = lista->prox;
     }
+
     /* Aluno não encontrado */
-    if(lista->aluno.ra != ra){
+    if(strcmp(lista->reg.key, key) > 0){
         return false;
     }
 
-    *a = lista->aluno;
+    *a = lista->reg;
     return true;
 }
 
-
+void LiberaLista(Lista lista){
+    Lista anterior;
+    while(lista){
+        anterior = lista;
+        lista = lista->prox;
+        free(anterior->reg.key);
+        free(anterior);
+    }
+}
 
 /* FUNÇÕES DA INTERFACE */
 /* -------------------- */
 
 /* Devolve um apontador para uma base vazia com tabela incializada */
-Base CriaBase(){
-    ImplBase base =  MALLOC(sizeof(RegBase));
+Tabela CriaTabela(){
+    ImplTabela base = (RegTabela*) malloc(sizeof(RegTabela));
 
     /* inicializa todos os campos da tabela com listas vazias */
     for(int i = 0; i < MaxHash; i++){
-        base->tabela[i] = MALLOC(sizeof(RegLista));
-        base->tabela[i]->ra = -1 ;
-        base->tabela[i]->prox = NULL ;
+        base->tabela[i] = (RegLista*) malloc(sizeof(RegLista));
+        base->tabela[i]->reg.key = empty_string;
+        base->tabela[i]->prox = NULL;
     }
 
     /* numero de registros inicial é 0 */
@@ -112,11 +138,14 @@ Base CriaBase(){
     return base;
 } /* CriaBase() */
 
-/* Insere o aluno "a" na base "p". Se não for possível, devolve false*/
-Boolean InsereBase(Base p, Aluno *a){
-    ImplBase b = (ImplBase) p;
-    int indHash = Espalha(a->ra);
-    Boolean res;
+/* Insere o registro "a" na tabela "p". Se não for possível, devolve false*/
+bool InsereTabela(Tabela p, Registro a){
+    ImplTabela b = (ImplTabela) p;
+    int indHash = Espalha(a.key);
+    bool res;
+    String key_copy = (String) malloc(sizeof(char) * strlen(a.key));
+    strcpy(a.key,key_copy);
+    a.key = key_copy;
 
     /* delega a inserção em si à uma função auxiliar */
     res = InsereLista(b->tabela[indHash], a);
@@ -127,13 +156,13 @@ Boolean InsereBase(Base p, Aluno *a){
     return res;
 } /* InsereBase */
 
-/* remove de uma base p. Se não for possível, retorna false */
-Boolean RemoveBase(Base p, int ra){
-    Boolean res;
-    ImplBase b = (ImplBase) p;
-    int indHash = Espalha(ra);
+/* remove de uma Tabela p. Se não for possível, retorna false */
+bool RemoveTabela(Tabela p, String key){
+    bool res;
+    ImplTabela b = (ImplTabela) p;
+    int indHash = Espalha(key);
 
-    res = RemoveLista(b->tabela[indHash],ra);
+    res = RemoveLista(b->tabela[indHash],key);
     if(res){
         b->numregs--;
     }
@@ -141,36 +170,29 @@ Boolean RemoveBase(Base p, int ra){
     return res;
 }
 
-Boolean ConsultaBase(Base p,int ra, Aluno *a){
-    Boolean res;
-    ImplBase b = (ImplBase) p;
-    int indHash = Espalha(ra);
+bool ConsultaTabela(Tabela p, String key, Registro* a){
+    bool res;
+    ImplTabela b = (ImplTabela) p;
+    int indHash = Espalha(key);
 
-    res = ConsultaLista(b->tabela[indHash], ra, a);
+    res = ConsultaLista(b->tabela[indHash], key, a);
     
     return res;
 }
 
-int NumeroRegsBase(Base p){
-    return ((ImplBase) p)->numregs;
+int NumeroRegsTabela(Tabela p){
+    return ((ImplTabela) p)->numregs;
 }
 
-void ImprimeBase(Base p){
-    ImplBase b = (ImplBase) p;
 
-    for(int i = 0; i < MaxHash; i++){
-        ImprimeLista(b->tabela[i],i);
-    }
-}
-
-void LiberaBase(Base p){
-    ImplBase b = (ImplBase) p;
+void LiberaTabela(Tabela p){
+    ImplTabela b = (ImplTabela) p;
 
     for(int i = 0; i < MaxHash; i++){
         LiberaLista(b->tabela[i]);
     }
 
-    FREE(b);
+    free(b);
 }
 
 
