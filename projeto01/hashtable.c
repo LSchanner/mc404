@@ -100,7 +100,7 @@ bool ConsultaLista(Lista lista,String key,Registro *a){
     }
 
     /* Aluno não encontrado */
-    if(strcmp(lista->reg.key, key) > 0){
+    if(lista == NULL || strcmp(lista->reg.key, key) > 0){
         return false;
     }
 
@@ -144,7 +144,7 @@ bool InsereTabela(Tabela p, Registro a){
     int indHash = Espalha(a.key);
     bool res;
     String key_copy = (String) malloc(sizeof(char) * strlen(a.key));
-    strcpy(a.key,key_copy);
+    strcpy(key_copy,a.key);
     a.key = key_copy;
 
     /* delega a inserção em si à uma função auxiliar */
