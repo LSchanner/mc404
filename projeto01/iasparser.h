@@ -1,4 +1,10 @@
 #include "hashtable.h"
+#include <stdio.h>
 
-// Parseia um arquivo em assembly de ias. Devolve uma string em formato hexadecimal
-String parse_ias_string(String input,Tabela hashtable);
+typedef void* MemoryMap;
+
+// Parseia um arquivo em assembly de ias. Devolve um Mapa de Memoria 
+MemoryMap assemble_ias(String input);
+
+// Printa o MemoryMap
+void printMemoryMap(MemoryMap object, FILE* target);
