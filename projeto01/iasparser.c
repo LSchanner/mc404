@@ -4,18 +4,6 @@
 #include "iasparser.h"
 #include "hashtable.h"
 
-typedef struct Palavra{
-    union{
-        long long dado;
-        long instrucoes[2];
-    };
-    bool used_esq,used_dir;
-}Palavra;
-
-typedef struct MemoryMapImpl{
-    Palavra map[2048];
-}MemoryMapImpl;
-
 // Funções utilitárias
 bool match_rotulo(String);
 
@@ -23,22 +11,22 @@ bool match_symbol(String);
 
 int parse_num(String);
 
-void write_word(MemoryMapImpl map,PosicaoMontagem pos,long long data);
+void write_word(MemoryMap* map,PosicaoMontagem pos,long long data);
 
-void write_instruction(MemoryMapImpl map,PosicaoMontagem pos,long data);
+void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data);
 
-void instrucao_com_argumento(long codigo, MemoryMapImpl, PosicaoMontagem* pos,bool first,Tabela rotulos); 
+void instrucao_com_argumento(long codigo, MemoryMap* map, PosicaoMontagem* pos,bool first,Tabela rotulos); 
 
-void instrucao_sem_argumento(long codigo, MemoryMapImpl, PosicaoMontagem* pos,bool first,Tabela rotulos); 
+void instrucao_sem_argumento(long codigo, MemoryMap* map, PosicaoMontagem* pos,bool first,Tabela rotulos); 
 
-void instrucao_com_condicional(long codigo1,long codigo2, MemoryMapImpl, PosicaoMontagem* pos,bool first,Tabela rotulos); 
+void instrucao_com_condicional(long codigo1,long codigo2, MemoryMap* map, PosicaoMontagem* pos,bool first,Tabela rotulos); 
 
 void erro(String message);
 
 MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool first){
     char* token;
     PosicaoMontagem pos = {0,0};
-    MemoryMapImpl mapa;
+    MemoryMap mapa;
     int linenum = 0;
     
     // Inicializa o mapa de memória
@@ -50,13 +38,14 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
         token = strtok(line," \t");
 
         if(match_rotulo(token)){
+
             Registro rotulo = {token, pos};
             InsereTabela(rotulos, rotulo);
             token = strtok(NULL," \t");
         }
 
         // Diretivas
-        if(token[0] == '.'){
+        if(token && token[0] == '.'){
             // Diretiva .org
             if(strcmp(token,".org") == 0){
                 token = strtok(NULL," \t");
@@ -80,7 +69,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 int num = parse_num(strtok(NULL," \t"));
                 while(pos.pos_mapa % num != 0 && pos.pos_instrucao != 0){
 
-                    write_instruction(mapa,pos,0);
+                    write_instruction(&mapa,pos,0);
                     if(pos.pos_instrucao == 1){
                         pos.pos_instrucao = 0;
                         pos.pos_mapa++;
@@ -106,7 +95,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 }
 
                 for(int i = 0; i < data; i++){
-                    write_word(mapa,pos,num);
+                    write_word(&mapa,pos,num);
                     pos.pos_mapa++;
                 }
 
@@ -120,60 +109,63 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 }else if(ConsultaTabela(symbols,token,&reg)){
                     data = reg.val.pos_mapa;
                 }else if(ConsultaTabela(rotulos,token,&reg)){
+                    printf("%s\n",token);
                     data = reg.val.pos_mapa;
                 }
-                write_word(mapa,pos,data);
+                write_word(&mapa,pos,data);
                 pos.pos_mapa++;
             }
 
             // Instruções com argumento
-        }else if(strcmp(token,"LD")){
-            instrucao_com_argumento(0x01, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"LD-")){
-            instrucao_com_argumento(0x02, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"LD|")){
-            instrucao_com_argumento(0x03, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"LDmq_mx")){
-            instrucao_com_argumento(0x09, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"ST")){
-            instrucao_com_argumento(0x21, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"ADD")){
-            instrucao_com_argumento(0x05, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"ADD|")){
-            instrucao_com_argumento(0x07, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"SUB")){
-            instrucao_com_argumento(0x06, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"SUB|")){
-            instrucao_com_argumento(0x08, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"MUL")){
-            instrucao_com_argumento(0x0b, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"DIF")){
-            instrucao_com_argumento(0x0c, mapa, &pos, first, rotulos);
+        }else if(token){
+            if(strcmp(token,"LD")){
+                instrucao_com_argumento(0x01, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"LD-")){
+                instrucao_com_argumento(0x02, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"LD|")){
+                instrucao_com_argumento(0x03, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"LDmq_mx")){
+                instrucao_com_argumento(0x09, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"ST")){
+                instrucao_com_argumento(0x21, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"ADD")){
+                instrucao_com_argumento(0x05, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"ADD|")){
+                instrucao_com_argumento(0x07, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"SUB")){
+                instrucao_com_argumento(0x06, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"SUB|")){
+                instrucao_com_argumento(0x08, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"MUL")){
+                instrucao_com_argumento(0x0b, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"DIF")){
+                instrucao_com_argumento(0x0c, &mapa, &pos, first, rotulos);
 
-            // Instruções sem argumentos
-        }else if(strcmp(token,"LDmq")){
-            instrucao_sem_argumento(0x0a, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"LSH")){
-            instrucao_sem_argumento(0x14, mapa, &pos, first, rotulos);
-        }else if(strcmp(token,"RSH")){
-            instrucao_sem_argumento(0x15, mapa, &pos, first, rotulos);
+                // Instruções sem argumentos
+            }else if(strcmp(token,"LDmq")){
+                instrucao_sem_argumento(0x0a, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"LSH")){
+                instrucao_sem_argumento(0x14, &mapa, &pos, first, rotulos);
+            }else if(strcmp(token,"RSH")){
+                instrucao_sem_argumento(0x15, &mapa, &pos, first, rotulos);
 
-            // Casos especiais
-        }else if(strcmp(token,"JMP")){
-            instrucao_com_condicional(0x0D, 0x0E, mapa, &pos,first,rotulos);
-        }else if(strcmp(token,"JMP+")){
-            instrucao_com_condicional(0x0F, 0x10, mapa, &pos,first,rotulos);
-        }else if(strcmp(token,"STaddr")){
-            instrucao_com_condicional(0x12, 0x13, mapa, &pos,first,rotulos);
+                // Casos especiais
+            }else if(strcmp(token,"JMP")){
+                instrucao_com_condicional(0x0D, 0x0E, &mapa, &pos,first,rotulos);
+            }else if(strcmp(token,"JMP+")){
+                instrucao_com_condicional(0x0F, 0x10, &mapa, &pos,first,rotulos);
+            }else if(strcmp(token,"STaddr")){
+                instrucao_com_condicional(0x12, 0x13, &mapa, &pos,first,rotulos);
+            }
         }
 
         linenum++;
     }
 
-    return NULL;
+    return mapa;
 }
 
-void instrucao_com_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
+void instrucao_com_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
     codigo = codigo << 12;
     String token = strtok(NULL," \t");
     Registro reg;
@@ -196,7 +188,7 @@ void instrucao_com_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* p
     }
 }
 
-void instrucao_sem_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
+void instrucao_sem_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
     codigo = codigo << 12;
     write_instruction(mapa,*pos,codigo);
     if(pos->pos_instrucao == 1){
@@ -207,7 +199,7 @@ void instrucao_sem_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* p
     }
 }
 
-void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMapImpl mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
+void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMap* mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
     long codigo = cod_esq  << 12;
     Registro reg;
     String token = strtok(NULL," \t");
@@ -286,36 +278,37 @@ int parse_num(String input){
     return strtol(input,NULL,0);
 }
 
-void write_word(MemoryMapImpl map,PosicaoMontagem pos,long long data){
+void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
     if(pos.pos_instrucao == 1){
         erro(" Não é possível escrever em memória desalinhada");
     }
-    if(map.map[pos.pos_mapa].used_esq || map.map[pos.pos_mapa].used_dir){
+    if(map->map[pos.pos_mapa].used_esq || map->map[pos.pos_mapa].used_dir){
         erro(" Posição de memória já utilizada");
     }else{
-        map.map[pos.pos_mapa].dado = data;
-        map.map[pos.pos_mapa].used_dir = map.map[pos.pos_mapa].used_esq = true;
+        map->map[pos.pos_mapa].dado = data;
+        map->map[pos.pos_mapa].used_dir = map->map[pos.pos_mapa].used_esq = true;
+        map->map[pos.pos_mapa].is_data = true;
     }
 
 }
 
-void write_instruction(MemoryMapImpl map,PosicaoMontagem pos,long data){
+void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
     if(pos.pos_instrucao == 0){
-        if(map.map[pos.pos_mapa].used_esq){
+        if(map->map[pos.pos_mapa].used_esq){
             erro(" Posição de memória já utilizada");
         }
         else{
-            map.map[pos.pos_mapa].instrucoes[0] = data;  
-            map.map[pos.pos_mapa].used_esq = true;
+            map->map[pos.pos_mapa].instrucoes[0] = data;  
+            map->map[pos.pos_mapa].used_esq = true;
         }
     }
     if(pos.pos_instrucao == 1){
-        if(map.map[pos.pos_mapa].used_dir){
+        if(map->map[pos.pos_mapa].used_dir){
             erro(" Posição de memória já utilizada");
         }
         else{
-            map.map[pos.pos_mapa].instrucoes[1] = data;  
-            map.map[pos.pos_mapa].used_dir = true;
+            map->map[pos.pos_mapa].instrucoes[1] = data;  
+            map->map[pos.pos_mapa].used_dir = true;
         }
     }
 
@@ -366,5 +359,22 @@ MemoryMap assemble_ias(String input){
         numlines++;
     }
 
-    return NULL;
+    parse_ias_string(lines,rotulos,symbols,true);
+
+    MemoryMap mapa = parse_ias_string(lines,rotulos,symbols,false);
+
+    return mapa;
+}
+
+void printMemoryMap(MemoryMap object,FILE* target){
+    for(int i = 0; i < 1024; i++){
+        printf("%03x ",i);
+        if(object.map[i].is_data){
+            printf("%010x",object.map[i].dado);
+        }else{
+            printf("%05x ",object.map[i].instrucoes[0]);
+            printf("%05x ",object.map[i].instrucoes[1]);
+        }
+        printf("\n");
+    }
 }

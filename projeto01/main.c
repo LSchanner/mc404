@@ -23,7 +23,8 @@ int main ( int argc, char *argv[] ){
     input_text = (char*) malloc(input_file_size * (sizeof(char)));
     fread(input_text, sizeof(char), input_file_size, input_file);
 
-    assemble_ias(input_text);
+    MemoryMap mapa = assemble_ias(input_text);
+    printMemoryMap(mapa,stdin);
 
     
     return 0;
