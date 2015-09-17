@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "hashtable.h"
 #include "iasparser.h"
 
 int main ( int argc, char *argv[] ){
@@ -24,13 +23,8 @@ int main ( int argc, char *argv[] ){
     input_text = (char*) malloc(input_file_size * (sizeof(char)));
     fread(input_text, sizeof(char), input_file_size, input_file);
 
+    assemble_ias(input_text);
 
-    // Chama o parseador pela primeira vez, para preencher a tabela
-    Tabela hashtable = CriaTabela();
-    parse_ias_string(input_text,hashtable);
-
-    // Chama o parseador pela segunda vez, dessa vez com a hashtable já construída.
-    String output = parse_ias_string(input_text,hashtable);
     
     return 0;
 }

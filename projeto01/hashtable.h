@@ -1,14 +1,17 @@
+#pragma once
 #define MaxHash 11
+#include "iasparser.h"
+#include <stdbool.h>
 
 typedef char* String;
 
-typedef enum{false,true} bool;
+typedef PosicaoMontagem DataType;
 
 typedef void* Tabela;  /* tipo efetivo escondido */
 
 typedef struct {
   String key;
-  void* val;
+  DataType val;
 } Registro;
   
 Tabela CriaTabela();
