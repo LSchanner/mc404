@@ -22,9 +22,17 @@ int main ( int argc, char *argv[] ){
     char* input_text;
     input_text = (char*) malloc(input_file_size * (sizeof(char)));
     fread(input_text, sizeof(char), input_file_size, input_file);
+    fclose(input_file);
 
     MemoryMap mapa = assemble_ias(input_text);
-    printMemoryMap(mapa,stdin);
+    FILE* output_file = stdout;
+    
+    if(argc >= 2){
+        output_file = fopen(argv[2],"w");
+
+    }
+
+    printMemoryMap(mapa,output_file);
 
     
     return 0;

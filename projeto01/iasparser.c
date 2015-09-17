@@ -109,7 +109,6 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 }else if(ConsultaTabela(symbols,token,&reg)){
                     data = reg.val.pos_mapa;
                 }else if(ConsultaTabela(rotulos,token,&reg)){
-                    printf("%s\n",token);
                     data = reg.val.pos_mapa;
                 }
                 write_word(&mapa,pos,data);
@@ -368,13 +367,14 @@ MemoryMap assemble_ias(String input){
 
 void printMemoryMap(MemoryMap object,FILE* target){
     for(int i = 0; i < 1024; i++){
-        printf("%03x ",i);
+        fprintf(target,"%03x ",i);
         if(object.map[i].is_data){
-            printf("%010x",object.map[i].dado);
+           long long data = object.map[i].dado;
+           fprintf(target,"%02llx %03llx %02llx %03llx",data >> 32, data >> 20 ,data >> 12, data);
         }else{
-            printf("%05x ",object.map[i].instrucoes[0]);
-            printf("%05x ",object.map[i].instrucoes[1]);
+           fprintf(target, "%02lx %03lx ",object.map[i].instrucoes[0] >> 12, object.map[i].instrucoes[0]);
+           fprintf(target, "%02lx %03lx",object.map[i].instrucoes[1] >> 12, object.map[i].instrucoes[1]);
         }
-        printf("\n");
+        fprintf(target,"\n");
     }
 }
