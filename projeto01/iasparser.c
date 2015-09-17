@@ -32,16 +32,22 @@ void write_word(MemoryMapImpl map,PosicaoMontagem pos,long long data);
 
 void write_instruction(MemoryMapImpl map,PosicaoMontagem pos,long data);
 
+void instrucao_com_argumento(long codigo, MemoryMapImpl, PosicaoMontagem* pos,bool first,Tabela rotulos); 
+
+void instrucao_sem_argumento(long codigo, MemoryMapImpl, PosicaoMontagem* pos,bool first,Tabela rotulos); 
+
 void erro(String message);
 
-MemoryMap parse_ias_string(String input, Tabela rotulos,Tabela symbols,bool first){
+MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool first){
     char* token;
     PosicaoMontagem pos = {0,0};
     MemoryMapImpl mapa;
+    int linenum = 0;
 
-
-    token = strtok(input," \t");
-    while(token != NULL){
+    while(lines[linenum] != NULL){
+        String line = (String) malloc(sizeof(char) * strlen(lines[linenum]));
+        strcpy(line,lines[linenum]);
+        token = strtok(line," \t");
 
         if(match_rotulo(token)){
             Registro rotulo = {token,(void*) pos};
@@ -65,7 +71,7 @@ MemoryMap parse_ias_string(String input, Tabela rotulos,Tabela symbols,bool firs
                     Registro macro = {symbol,(void*)value};
                     InsereTabela(symbols,macro);
                 }else{
-                    erro("Simbolo inválido",pos);
+                    erro("Simbolo inválido");
                 }
                 
 
@@ -118,11 +124,161 @@ MemoryMap parse_ias_string(String input, Tabela rotulos,Tabela symbols,bool firs
                 pos.pos_mapa++;
             }
 
+        // Instruções com argumento
+        }else if(strcmp(token,"LD")){
+            instrucao_com_argumento(0x01, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"LD-")){
+            instrucao_com_argumento(0x02, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"LD|")){
+            instrucao_com_argumento(0x03, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"LDmq_mx")){
+            instrucao_com_argumento(0x09, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"ST")){
+            instrucao_com_argumento(0x21, mapa, &pos, first, rotulos);
         }else if(strcmp(token,"ADD")){
+            instrucao_com_argumento(0x05, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"ADD|")){
+            instrucao_com_argumento(0x07, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"SUB")){
+            instrucao_com_argumento(0x06, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"SUB|")){
+            instrucao_com_argumento(0x08, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"MUL")){
+            instrucao_com_argumento(0x0b, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"DIF")){
+            instrucao_com_argumento(0x0c, mapa, &pos, first, rotulos);
+
+        // Instruções sem argumentos
+        }else if(strcmp(token,"LDmq")){
+            instrucao_sem_argumento(0x0a, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"LSH")){
+            instrucao_sem_argumento(0x14, mapa, &pos, first, rotulos);
+        }else if(strcmp(token,"RSH")){
+            instrucao_sem_argumento(0x15, mapa, &pos, first, rotulos);
+
+        // Casos especiais
+        }else if(strcmp(token,"JMP")){
+            long codigo = 0x0d << 12;
+            Registro reg;
+            String token = strtok(NULL," \t");
+            if(!first){
+                if(ConsultaTabela(rotulos,token,&reg)){
+                    PosicaoMontagem pos_jump =((PosicaoMontagem) reg.val);
+                    if(pos_jump.pos_instrucao == 0){
+                        codigo = 0x0d; 
+                    }else{
+                        codigo = 0x0e; 
+                    }
+                    codigo = codigo << 12;
+                    codigo += pos_jump.pos_mapa;
+                }else{
+                    codigo = 0x0d; 
+                    codigo = codigo << 12;
+                    codigo += parse_num(token);
+                }
+            }
+            write_instruction(mapa,pos,codigo);
+            if(pos.pos_instrucao == 1){
+                pos.pos_instrucao = 0;
+                pos.pos_mapa++;
+            }else{
+                pos.pos_instrucao = 1;
+            }
+        }else if(strcmp(token,"JMP+")){
+            long codigo = 0x0F << 12;
+            Registro reg;
+            String token = strtok(NULL," \t");
+            if(!first){
+                if(ConsultaTabela(rotulos,token,&reg)){
+                    PosicaoMontagem pos_jump =((PosicaoMontagem) reg.val);
+                    if(pos_jump.pos_instrucao == 0){
+                        codigo = 0x0F; 
+                    }else{
+                        codigo = 0x10; 
+                    }
+                    codigo = codigo << 12;
+                    codigo += pos_jump.pos_mapa;
+                }else{
+                    codigo = 0x0F; 
+                    codigo = codigo << 12;
+                    codigo += parse_num(token);
+                }
+            }
+            write_instruction(mapa,pos,codigo);
+            if(pos.pos_instrucao == 1){
+                pos.pos_instrucao = 0;
+                pos.pos_mapa++;
+            }else{
+                pos.pos_instrucao = 1;
+            }
+        }else if(strcmp(token,"STaddr")){
+            long codigo = 0x12 << 12;
+            Registro reg;
+            String token = strtok(NULL," \t");
+            if(!first){
+                if(ConsultaTabela(rotulos,token,&reg)){
+                    PosicaoMontagem pos_jump =((PosicaoMontagem) reg.val);
+                    if(pos_jump.pos_instrucao == 0){
+                        codigo = 0x12; 
+                    }else{
+                        codigo = 0x13; 
+                    }
+                    codigo = codigo << 12;
+                    codigo += pos_jump.pos_mapa;
+                }else{
+                    codigo = 0x12; 
+                    codigo = codigo << 12;
+                    codigo += parse_num(token);
+                }
+            }
+            write_instruction(mapa,pos,codigo);
+            if(pos.pos_instrucao == 1){
+                pos.pos_instrucao = 0;
+                pos.pos_mapa++;
+            }else{
+                pos.pos_instrucao = 1;
+            }
         }
+
+
+
+        linenum++;
     }
 
 
     return NULL;
 }
 
+void instrucao_com_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
+    codigo = codigo << 12;
+    String token = strtok(NULL," \t");
+    Registro reg;
+    if(!first){
+        if(ConsultaTabela(rotulos,token,&reg)){
+            if(((PosicaoMontagem) reg.val).pos_instrucao == 1){
+                erro("Rótulo inválido para esta operação");
+            }
+            codigo += ((PosicaoMontagem) reg.val).pos_mapa;
+        }else{
+            codigo += parse_num(token);
+        }
+    }
+    write_instruction(mapa,*pos,codigo);
+    if(pos->pos_instrucao == 1){
+        pos->pos_instrucao = 0;
+        pos->pos_mapa++;
+    }else{
+        pos->pos_instrucao = 1;
+    }
+}
+
+void instrucao_sem_argumento(long codigo, MemoryMapImpl mapa, PosicaoMontagem* pos,bool first,Tabela rotulos){
+    codigo = codigo << 12;
+    write_instruction(mapa,*pos,codigo);
+    if(pos->pos_instrucao == 1){
+        pos->pos_instrucao = 0;
+        pos->pos_mapa++;
+    }else{
+        pos->pos_instrucao = 1;
+    }
+}
