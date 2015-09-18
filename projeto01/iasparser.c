@@ -233,6 +233,20 @@ void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMap* mapa, Posic
     long codigo = cod_esq  << 12;
     Registro reg;
     String token = strtok(NULL," \t");
+    if(!token){
+        erro("Argumento esperado");
+    }
+    if(token[0] != '"' || token[strlen(token)-1] != '"'){
+        erro("O argumento da instrucao deve estar envolto em aspas");
+    }
+
+    // remove as aspas do começo da string
+    token++;
+
+    // as aspas do final viram :, para podermos buscar na hashtable
+    token[strlen(token)-1] = ':';
+
+
     if(!first){
         if(ConsultaTabela(rotulos,token,&reg)){
             PosicaoMontagem pos_jump =((PosicaoMontagem) reg.val);
