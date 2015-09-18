@@ -24,16 +24,25 @@ int main ( int argc, char *argv[] ){
     fread(input_text, sizeof(char), input_file_size, input_file);
     fclose(input_file);
 
+    // Chama o montador
     MemoryMap mapa = assemble_ias(input_text);
     FILE* output_file = stdout;
     
-    if(argc >= 2){
+    // Se o usuário passar um arquivo para escrita, use ele
+    if(argc >= 3){
         output_file = fopen(argv[2],"w");
-
+        if(output_file == NULL){
+            printf("Could not open file for writing\n");
+            return -1;
+        }
     }
 
+    // Printa o Mapa de memória
     printMemoryMap(mapa,output_file);
 
+    // libera recursos utilizados;
+    fclose(output_file);
+    free(input_text);
     
     return 0;
 }

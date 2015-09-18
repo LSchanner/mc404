@@ -109,7 +109,9 @@ bool ConsultaLista(Lista lista,String key,Registro *a){
 }
 
 void LiberaLista(Lista lista){
-    Lista anterior;
+    Lista anterior = lista;
+    lista = lista->prox;
+    free(anterior);
     while(lista){
         anterior = lista;
         lista = lista->prox;

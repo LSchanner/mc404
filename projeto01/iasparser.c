@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include "iasparser.h"
@@ -23,22 +24,32 @@ void instrucao_com_condicional(long codigo1,long codigo2, MemoryMap* map, Posica
 
 void erro(String message);
 
+void upper_case(String str);
+
+
+// Variável global de linha. Serve para que qualquer função possa chamar 
+// erro() sem nencessidade de ter o número da linha incluso entre seus 
+// argumentos
+int linenum;
+
 MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool first){
     char* token;
     PosicaoMontagem pos = {0,0};
     MemoryMap mapa;
-    int linenum = 0;
+    linenum = 0;
     
     // Inicializa o mapa de memória
     memset(&mapa,0,sizeof(mapa));
 
     while(lines[linenum] != NULL){
+
+        // strtok() destrói a string, então primeiro fazemos uma cópia
         String line = (String) malloc(sizeof(char) * strlen(lines[linenum]));
         strcpy(line,lines[linenum]);
         token = strtok(line," \t");
 
-        if(match_rotulo(token)){
-
+        // Adiciona um rótulo na hashtable
+        if(token && match_rotulo(token)){
             Registro rotulo = {token, pos};
             InsereTabela(rotulos, rotulo);
             token = strtok(NULL," \t");
@@ -52,7 +63,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 pos.pos_mapa = parse_num(token);
                 pos.pos_instrucao = 0;
 
-                // Diretiva .set
+            // Diretiva .set
             }else if(strcmp(token,".set") == 0){
                 String symbol = strtok(NULL," \t");
                 if(match_symbol(symbol)){
@@ -64,7 +75,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 }
 
 
-                // Diretiva .align
+            // Diretiva .align
             }else if(strcmp(token,".align") == 0){
                 int num = parse_num(strtok(NULL," \t"));
                 while(pos.pos_mapa % num != 0 && pos.pos_instrucao != 0){
@@ -113,51 +124,57 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 }
                 write_word(&mapa,pos,data);
                 pos.pos_mapa++;
+            }else{
+                erro("Diretiva inválida");
             }
 
             // Instruções com argumento
         }else if(token){
-            if(strcmp(token,"LD")){
+            upper_case(token);
+            if(!strcmp(token,"LD")){
                 instrucao_com_argumento(0x01, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"LD-")){
+            }else if(!strcmp(token,"LD-")){
                 instrucao_com_argumento(0x02, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"LD|")){
+            }else if(!strcmp(token,"LD|")){
                 instrucao_com_argumento(0x03, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"LDmq_mx")){
+            }else if(!strcmp(token,"LDMQ_MX")){
                 instrucao_com_argumento(0x09, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"ST")){
+            }else if(!strcmp(token,"ST")){
                 instrucao_com_argumento(0x21, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"ADD")){
+            }else if(!strcmp(token,"ADD")){
                 instrucao_com_argumento(0x05, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"ADD|")){
+            }else if(!strcmp(token,"ADD|")){
                 instrucao_com_argumento(0x07, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"SUB")){
+            }else if(!strcmp(token,"SUB")){
                 instrucao_com_argumento(0x06, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"SUB|")){
+            }else if(!strcmp(token,"SUB|")){
                 instrucao_com_argumento(0x08, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"MUL")){
+            }else if(!strcmp(token,"MUL")){
                 instrucao_com_argumento(0x0b, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"DIF")){
+            }else if(!strcmp(token,"DIV")){
                 instrucao_com_argumento(0x0c, &mapa, &pos, first, rotulos);
 
                 // Instruções sem argumentos
-            }else if(strcmp(token,"LDmq")){
+            }else if(!strcmp(token,"LDMQ")){
                 instrucao_sem_argumento(0x0a, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"LSH")){
+            }else if(!strcmp(token,"LSH")){
                 instrucao_sem_argumento(0x14, &mapa, &pos, first, rotulos);
-            }else if(strcmp(token,"RSH")){
+            }else if(!strcmp(token,"RSH")){
                 instrucao_sem_argumento(0x15, &mapa, &pos, first, rotulos);
 
                 // Casos especiais
-            }else if(strcmp(token,"JMP")){
+            }else if(!strcmp(token,"JMP")){
                 instrucao_com_condicional(0x0D, 0x0E, &mapa, &pos,first,rotulos);
-            }else if(strcmp(token,"JMP+")){
+            }else if(!strcmp(token,"JUMP+")){
                 instrucao_com_condicional(0x0F, 0x10, &mapa, &pos,first,rotulos);
-            }else if(strcmp(token,"STaddr")){
+            }else if(!strcmp(token,"STADDR")){
                 instrucao_com_condicional(0x12, 0x13, &mapa, &pos,first,rotulos);
+            }else{
+                erro("instrução não existente");
             }
         }
 
+        free(line);
         linenum++;
     }
 
@@ -168,6 +185,20 @@ void instrucao_com_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,
     codigo = codigo << 12;
     String token = strtok(NULL," \t");
     Registro reg;
+
+    if(!token){
+        erro("Argumento esperado");
+    }
+    if(token[0] != '"' || token[strlen(token)-1] != '"'){
+        erro("O argumento da instrucao deve estar envolto em aspas");
+    }
+
+    // remove as aspas do começo da string
+    token++;
+
+    // as aspas do final viram :, para podermos buscar na hashtable
+    token[strlen(token)-1] = ':';
+
     if(!first){
         if(ConsultaTabela(rotulos,token,&reg)){
             if(((PosicaoMontagem) reg.val).pos_instrucao == 1){
@@ -227,11 +258,20 @@ void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMap* mapa, Posic
     }
 }
 
+// Retorna true se um caracter for alfanumérico
 bool alfanumerico(char c){
     return  (c < 91 && c > 65) ||
             (c > 96 && c < 123) || 
             (c > 47 && c < 58) ||
             (c == 95);
+}
+
+// Converte String para maiúsculas
+void upper_case(String str){
+    while(*str){
+        *str = toupper(*str);
+        str++;
+    }
 }
 bool match_rotulo(String rot){
 
@@ -244,7 +284,6 @@ bool match_rotulo(String rot){
     if(*rot == ':'){
         rot++;
         return *rot == 0;
-
     }else{
         return false;
     }
@@ -261,18 +300,7 @@ bool match_symbol(String sym){
 }
 
 int parse_num(String input){
-    int pos = 0;
-
-    // Remove aspas
-    if(input[pos] == '"'){
-        input++;
-        while(input[pos] != '"'){
-            pos++;
-        }
-        if(input[pos+1] == 0){
-            input[pos] = 0;
-        }
-    }
+    //TODO lógica de verificação se é um número de fato
 
     return strtol(input,NULL,0);
 }
@@ -314,7 +342,9 @@ void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
 }
 
 void erro(String message){
-    printf("%s\n",message);
+    fprintf(stderr,"ERROR on line %d\n",linenum + 1);
+    fprintf(stderr,"-----------------------\n");
+    fprintf(stderr,"%s\n",message);
     exit(1);
 }
 
@@ -333,7 +363,7 @@ MemoryMap assemble_ias(String input){
     }
 
     // Aloca um vetor de strings do tamanho do número de linhas
-    String* lines = (String*) malloc(sizeof(String) * numlines);
+    String* lines = (String*) malloc(sizeof(String) * numlines + 1);
 
     // Copia o input para uma outra posição de memória, para usarmos strtok
     String inputcopy = (String) malloc(sizeof(char) * strlen(input));
@@ -358,23 +388,45 @@ MemoryMap assemble_ias(String input){
         numlines++;
     }
 
+    // A última posição do vetor é zerada para indicar 
+    lines[numlines] = NULL;
+
     parse_ias_string(lines,rotulos,symbols,true);
 
     MemoryMap mapa = parse_ias_string(lines,rotulos,symbols,false);
 
+    // Libera a memória
+    LiberaTabela(rotulos);
+    LiberaTabela(symbols);
+
+    for(int i = 0; i < numlines; i++){
+        free(lines[i]);
+    }
+    free(lines);
+    free(inputcopy);
+
     return mapa;
 }
 
+// Printa o mapa de memória
 void printMemoryMap(MemoryMap object,FILE* target){
     for(int i = 0; i < 1024; i++){
-        fprintf(target,"%03x ",i);
-        if(object.map[i].is_data){
-           long long data = object.map[i].dado;
-           fprintf(target,"%02llx %03llx %02llx %03llx",data >> 32, data >> 20 ,data >> 12, data);
-        }else{
-           fprintf(target, "%02lx %03lx ",object.map[i].instrucoes[0] >> 12, object.map[i].instrucoes[0]);
-           fprintf(target, "%02lx %03lx",object.map[i].instrucoes[1] >> 12, object.map[i].instrucoes[1]);
+
+        if(object.map[i].used_dir || object.map[i].used_esq){
+
+            fprintf(target,"%03x ",i);
+            if(object.map[i].is_data){
+
+                // essas operações bitwise servem para selecionar os bits mais significativos e menos signitficativos
+                long long data = object.map[i].dado;
+                fprintf(target,"%02llX %03llX %02llX %03llX",data >> 32, (data >> 20) & 0xfff ,(data >> 12) & 0xff, data & 0xfff);
+            }else{
+
+                // essas operações bitwise servem para selecionar os bits mais significativos e menos signitficativos
+                fprintf(target, "%02lX %03lX ",object.map[i].instrucoes[0] >> 12, object.map[i].instrucoes[0] & 0xfff);
+                fprintf(target, "%02lX %03lX",object.map[i].instrucoes[1] >> 12, object.map[i].instrucoes[1] & 0xfff);
+            }
+            fprintf(target,"\n");
         }
-        fprintf(target,"\n");
     }
 }
