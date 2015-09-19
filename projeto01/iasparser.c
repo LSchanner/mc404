@@ -78,15 +78,13 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
             // Diretiva .align
             }else if(strcmp(token,".align") == 0){
                 int num = parse_num(strtok(NULL," \t"));
-                while(pos.pos_mapa % num != 0 && pos.pos_instrucao != 0){
+                while(pos.pos_mapa % num != 0 || pos.pos_instrucao != 0){
 
                     write_instruction(&mapa,pos,0);
                     if(pos.pos_instrucao == 1){
                         pos.pos_instrucao = 0;
-                        pos.pos_mapa++;
-                    }else{
-                        pos.pos_instrucao = 1;
                     }
+                    pos.pos_mapa++;
                 }
 
                 // Diretiva .wfill
@@ -118,8 +116,8 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                     data = parse_num(token);
                 }
 
-                for(int i = 0; i < data; i++){
-                    write_word(&mapa,pos,num);
+                for(int i = 0; i < num; i++){
+                    write_word(&mapa,pos,data);
                     pos.pos_mapa++;
                 }
 
@@ -335,12 +333,52 @@ bool match_symbol(String sym){
 }
 
 int parse_num(String input){
-    //TODO lógica de verificação se é um número de fato
+    if(!input){
+        erro("Número esperado");
+    }
+
+    int base = 10;
+    int pos = 0;
+
+    // Primeiro testamos a hipótese de ser um número deciaml
+    while(input[pos]){
+        if(input[pos] < '0' || input[pos] > '9'){
+            base = 16;
+        }
+        pos++;
+    }
+
+    // Agora testamos se é hexadecimal. Base 0 indica um dígito inválido
+    if(base == 16){
+        if(input[0] != '0' || input[1] != 'x'){
+            base = 0;
+        }
+        pos = 2;
+        while(input[pos]){
+            if(
+                    (input[pos] < '0' || input[pos] > '9') &&
+                    ((input[pos] < 'A' || input[pos] > 'F') ||
+                     (input[pos] < 'a' || input[pos] > 'f')) ){
+                base = 0;
+            }
+            pos++;
+        }
+    }
+
+
+    if(base == 0){
+        erro("Número inválido");
+    }
+
+    
 
     return strtol(input,NULL,0);
 }
 
 void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
+    if(pos.pos_mapa > 1023){
+        erro("Memória lotada");
+    }
     if(pos.pos_instrucao == 1){
         erro(" Não é possível escrever em memória desalinhada");
     }
@@ -355,6 +393,9 @@ void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
 }
 
 void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
+    if(pos.pos_mapa > 1023){
+        erro("Memória lotada");
+    }
     if(pos.pos_instrucao == 0){
         if(map->map[pos.pos_mapa].used_esq){
             erro(" Posição de memória já utilizada");
