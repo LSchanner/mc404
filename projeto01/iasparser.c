@@ -208,6 +208,9 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
             }
         }
 
+        if(strtok(NULL," \t")){
+            erro("Token inesperado");
+        }
         free(line);
         linenum++;
     }
@@ -490,8 +493,13 @@ MemoryMap assemble_ias(String input){
     // A última posição do vetor é zerada para indicar 
     lines[numlines] = NULL;
 
+    // Passa o parseador pela primeira vez, para construir a tabela
+    // de Rótulos
     parse_ias_string(lines,rotulos,symbols,true);
+    LiberaTabela(symbols);
 
+    // Passa o parseador a segunda vez, para construir o mapa de memória
+    symbols = CriaTabela();
     MemoryMap mapa = parse_ias_string(lines,rotulos,symbols,false);
 
     // Libera a memória
