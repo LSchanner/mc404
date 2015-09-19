@@ -20,8 +20,9 @@ int main ( int argc, char *argv[] ){
 
     // Lê o arquivo
     char* input_text;
-    input_text = (char*) malloc(input_file_size * (sizeof(char)));
+    input_text = (char*) malloc(input_file_size * (sizeof(char)) + 1);
     fread(input_text, sizeof(char), input_file_size, input_file);
+    input_text[input_file_size-1] = 0;
     fclose(input_file);
 
     // Chama o montador

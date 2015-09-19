@@ -516,7 +516,7 @@ void printMemoryMap(MemoryMap object,FILE* target){
 
         if(object.map[i].used_dir || object.map[i].used_esq){
 
-            fprintf(target,"%03x ",i);
+            fprintf(target,"%03X ",i);
             if(object.map[i].is_data){
 
                 // essas operações bitwise servem para selecionar os bits mais significativos e menos signitficativos
