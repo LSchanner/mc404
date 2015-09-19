@@ -91,10 +91,21 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
 
                 // Diretiva .wfill
             }else if(strcmp(token,".wfill") == 0){
-                int num = parse_num(strtok(NULL," \t,"));
+                token = strtok(NULL," \t");
+
+                if(!token){
+                    erro("Argumento esperado");
+                }
+
                 long long data;
+                int num = parse_num(token);
                 Registro reg;
                 token = strtok(NULL," \t");
+
+                if(!token){
+                    erro("Argumento esperado");
+                }
+
                 if(first){
                     data = 0;
 
@@ -103,6 +114,8 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                     data = reg.val.pos_mapa;
                 }else if(ConsultaTabela(rotulos,token,&reg)){
                     data = reg.val.pos_mapa;
+                }else{
+                    data = parse_num(token);
                 }
 
                 for(int i = 0; i < data; i++){
@@ -115,13 +128,21 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 long long data;
                 Registro reg;
                 token = strtok(NULL," \t");
+
+                if(!token){
+                    erro("Argumento esperado");
+                }
+
                 if(first){
                     data = 0;
                 }else if(ConsultaTabela(symbols,token,&reg)){
                     data = reg.val.pos_mapa;
                 }else if(ConsultaTabela(rotulos,token,&reg)){
                     data = reg.val.pos_mapa;
+                }else{
+                    data = parse_num(token);
                 }
+
                 write_word(&mapa,pos,data);
                 pos.pos_mapa++;
             }else{
