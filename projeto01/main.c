@@ -20,9 +20,9 @@ int main ( int argc, char *argv[] ){
 
     // Lê o arquivo
     char* input_text;
-    input_text = (char*) malloc(input_file_size * (sizeof(char)) + 1);
+    input_text = (char*) malloc((1+input_file_size) * sizeof(char));
     fread(input_text, sizeof(char), input_file_size, input_file);
-    input_text[input_file_size-1] = 0;
+    input_text[input_file_size-1] = '\0';
     fclose(input_file);
 
     // Chama o montador
@@ -39,7 +39,7 @@ int main ( int argc, char *argv[] ){
     }
 
     // Printa o Mapa de memória
-    printMemoryMap(mapa,output_file);
+    printMemoryMap(mapa, output_file);
 
     // libera recursos utilizados;
     fclose(output_file);

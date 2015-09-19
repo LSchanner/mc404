@@ -44,7 +44,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
     while(lines[linenum] != NULL){
 
         // strtok() destrói a string, então primeiro fazemos uma cópia
-        String line = (String) malloc(sizeof(char) * strlen(lines[linenum]));
+        String line = (String) malloc(sizeof(char) * (strlen(lines[linenum]) + 1));
         strcpy(line,lines[linenum]);
         token = strtok(line," \t");
 
@@ -236,9 +236,6 @@ void instrucao_com_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,
     upper_case(token);
     if(!first){
         if(ConsultaTabela(rotulos,token,&reg)){
-            if(((PosicaoMontagem) reg.val).pos_instrucao == 1){
-                erro("Rótulo inválido para esta operação");
-            }
             codigo += ((PosicaoMontagem) reg.val).pos_mapa;
         }else{
             // Tiramos o :, para parsear um número
@@ -366,7 +363,7 @@ int parse_num(String input){
     int pos = 0;
 
     // Primeiro testamos a hipótese de ser um número deciaml
-    while(input[pos]){
+    while(input[pos] && base == 10){
         if(input[pos] < '0' || input[pos] > '9'){
             base = 16;
         }
@@ -381,8 +378,8 @@ int parse_num(String input){
         pos = 2;
         while(input[pos]){
             if((input[pos] < '0' || input[pos] > '9') &&
-                    ((input[pos] < 'A' || input[pos] > 'F')||
-                    (input[pos] < 'a' || input[pos] > 'f'))){
+                    (input[pos] < 'A' || input[pos] > 'F') &&
+                    (input[pos] < 'a' || input[pos] > 'f')){
                 base = 0;
             }
             pos++;
@@ -455,7 +452,7 @@ MemoryMap assemble_ias(String input){
     Tabela symbols = CriaTabela();
 
     // Conta o número de linhas
-    int numlines = 0;
+    int numlines = 1;
     int pos = 0;
     while(input[pos]){
         if(input[pos] == '\n'){
@@ -465,10 +462,10 @@ MemoryMap assemble_ias(String input){
     }
 
     // Aloca um vetor de strings do tamanho do número de linhas
-    String* lines = (String*) malloc(sizeof(String) * numlines + 1);
+    String* lines = (String*) malloc(sizeof(String) *( numlines + 1));
 
     // Copia o input para uma outra posição de memória, para usarmos strtok
-    String inputcopy = (String) malloc(sizeof(char) * strlen(input));
+    String inputcopy = (String) malloc(sizeof(char) * (strlen(input) + 1));
     strcpy(inputcopy,input);
 
     // Para cada linha, copia para o vetor de linhas
@@ -483,7 +480,7 @@ MemoryMap assemble_ias(String input){
             }
         }
 
-        lines[numlines] = (String) malloc(sizeof(char) * strlen(line));
+        lines[numlines] = (String) malloc(sizeof(char) * (strlen(line) + 1));
         strcpy(lines[numlines],line);
 
         line = strtok(NULL,"\n");

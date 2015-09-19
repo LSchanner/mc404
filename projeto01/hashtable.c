@@ -53,6 +53,7 @@ bool InsereLista(Lista lista, Registro a){
     // Se o elemento já existe, ele é substituido
     if(lista && strcmp(lista->reg.key,a.key) == 0){
         lista->reg.val = a.val;
+        free(a.key);
         return false;
     }
     else{
@@ -148,11 +149,11 @@ bool InsereTabela(Tabela p, Registro a){
     ImplTabela b = (ImplTabela) p;
     int indHash = Espalha(a.key);
     bool res;
-    String key_copy = (String) malloc(sizeof(char) * strlen(a.key));
+    String key_copy = (String) malloc(sizeof(char) * (strlen(a.key) + 1));
     strcpy(key_copy,a.key);
     a.key = key_copy;
 
-    /* delega a inserção em si à uma função auxiliar */
+    /* delega a inserção à uma função auxiliar */
     res = InsereLista(b->tabela[indHash], a);
     if(res){
         b->numregs++;
