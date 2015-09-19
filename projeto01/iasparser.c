@@ -50,6 +50,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
 
         // Adiciona um rótulo na hashtable
         if(token && match_rotulo(token)){
+            upper_case(token);
             Registro rotulo = {token, pos};
             InsereTabela(rotulos, rotulo);
             token = strtok(NULL," \t");
@@ -66,10 +67,16 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
             // Diretiva .set
             }else if(strcmp(token,".set") == 0){
                 String symbol = strtok(NULL," \t");
+
                 if(match_symbol(symbol)){
+
+                    // Guardamos todos símbolos como sendo maísculo,
+                    // para ficar case-insensitive 
+                    upper_case(symbol);
                     long long value = parse_num(strtok(NULL," \t"));
                     Registro macro = {symbol,{value,0}};
                     InsereTabela(symbols,macro);
+
                 }else{
                     erro("Simbolo inválido");
                 }
@@ -80,7 +87,6 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 int num = parse_num(strtok(NULL," \t"));
                 while(pos.pos_mapa % num != 0 || pos.pos_instrucao != 0){
 
-                    write_instruction(&mapa,pos,0);
                     if(pos.pos_instrucao == 1){
                         pos.pos_instrucao = 0;
                     }
@@ -104,21 +110,28 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                     erro("Argumento esperado");
                 }
 
+                // Utilizamos a mesma implementação de hashtable para
+                // rotulos e symbolos. 
+                // O valor do símbolo é guardada no campo "pos_mapa"
+                // Convertemos para upper case para deixar case_insensitive
+                upper_case(token);
                 if(first){
                     data = 0;
-
-                    // Utilizamos a mesma implementação de hashtable para rotulos e symbolos
                 }else if(ConsultaTabela(symbols,token,&reg)){
                     data = reg.val.pos_mapa;
+
                 }else if(ConsultaTabela(rotulos,token,&reg)){
                     data = reg.val.pos_mapa;
+
                 }else{
                     data = parse_num(token);
+
                 }
 
                 for(int i = 0; i < num; i++){
                     write_word(&mapa,pos,data);
                     pos.pos_mapa++;
+
                 }
 
                 // Diretiva .word
@@ -131,6 +144,9 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                     erro("Argumento esperado");
                 }
 
+                // Convertemos o token para upper case pq tanto
+                // símbolo quanto rótulo são case insensitive
+                upper_case(token);
                 if(first){
                     data = 0;
                 }else if(ConsultaTabela(symbols,token,&reg)){
@@ -149,14 +165,13 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
 
             // Instruções com argumento
         }else if(token){
-            upper_case(token);
             if(!strcmp(token,"LD")){
                 instrucao_com_argumento(0x01, &mapa, &pos, first, rotulos);
             }else if(!strcmp(token,"LD-")){
                 instrucao_com_argumento(0x02, &mapa, &pos, first, rotulos);
             }else if(!strcmp(token,"LD|")){
                 instrucao_com_argumento(0x03, &mapa, &pos, first, rotulos);
-            }else if(!strcmp(token,"LDMQ_MX")){
+            }else if(!strcmp(token,"LDmq_mx")){
                 instrucao_com_argumento(0x09, &mapa, &pos, first, rotulos);
             }else if(!strcmp(token,"ST")){
                 instrucao_com_argumento(0x21, &mapa, &pos, first, rotulos);
@@ -174,7 +189,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 instrucao_com_argumento(0x0c, &mapa, &pos, first, rotulos);
 
                 // Instruções sem argumentos
-            }else if(!strcmp(token,"LDMQ")){
+            }else if(!strcmp(token,"LDmq")){
                 instrucao_sem_argumento(0x0a, &mapa, &pos, first, rotulos);
             }else if(!strcmp(token,"LSH")){
                 instrucao_sem_argumento(0x14, &mapa, &pos, first, rotulos);
@@ -186,7 +201,7 @@ MemoryMap parse_ias_string(String* lines, Tabela rotulos,Tabela symbols,bool fir
                 instrucao_com_condicional(0x0D, 0x0E, &mapa, &pos,first,rotulos);
             }else if(!strcmp(token,"JUMP+")){
                 instrucao_com_condicional(0x0F, 0x10, &mapa, &pos,first,rotulos);
-            }else if(!strcmp(token,"STADDR")){
+            }else if(!strcmp(token,"STaddr")){
                 instrucao_com_condicional(0x12, 0x13, &mapa, &pos,first,rotulos);
             }else{
                 erro("instrução não existente");
@@ -218,6 +233,7 @@ void instrucao_com_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,
     // as aspas do final viram :, para podermos buscar na hashtable
     token[strlen(token)-1] = ':';
 
+    upper_case(token);
     if(!first){
         if(ConsultaTabela(rotulos,token,&reg)){
             if(((PosicaoMontagem) reg.val).pos_instrucao == 1){
@@ -225,6 +241,8 @@ void instrucao_com_argumento(long codigo, MemoryMap* mapa, PosicaoMontagem* pos,
             }
             codigo += ((PosicaoMontagem) reg.val).pos_mapa;
         }else{
+            // Tiramos o :, para parsear um número
+            token[strlen(token)-1] = 0;
             codigo += parse_num(token);
         }
     }
@@ -266,7 +284,10 @@ void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMap* mapa, Posic
     token[strlen(token)-1] = ':';
 
 
+    upper_case(token);
     if(!first){
+        // A instrução a ser escrita depende do rótulo usado como 
+        // argumento
         if(ConsultaTabela(rotulos,token,&reg)){
             PosicaoMontagem pos_jump =((PosicaoMontagem) reg.val);
             if(pos_jump.pos_instrucao == 0){
@@ -279,6 +300,10 @@ void instrucao_com_condicional(long cod_esq, long cod_dir,MemoryMap* mapa, Posic
         }else{
             codigo = cod_esq; 
             codigo = codigo << 12;
+
+            // Tiramos o :, para parsear um número
+            token[strlen(token)-1] = 0;
+
             codigo += parse_num(token);
         }
     }
@@ -350,15 +375,14 @@ int parse_num(String input){
 
     // Agora testamos se é hexadecimal. Base 0 indica um dígito inválido
     if(base == 16){
-        if(input[0] != '0' || input[1] != 'x'){
+        if(input[0] != '0' || (input[1] != 'X' && input[1] != 'x')){
             base = 0;
         }
         pos = 2;
         while(input[pos]){
-            if(
-                    (input[pos] < '0' || input[pos] > '9') &&
-                    ((input[pos] < 'A' || input[pos] > 'F') ||
-                     (input[pos] < 'a' || input[pos] > 'f')) ){
+            if((input[pos] < '0' || input[pos] > '9') &&
+                    ((input[pos] < 'A' || input[pos] > 'F')||
+                    (input[pos] < 'a' || input[pos] > 'f'))){
                 base = 0;
             }
             pos++;
@@ -375,6 +399,7 @@ int parse_num(String input){
     return strtol(input,NULL,0);
 }
 
+// Escreve em um palavra de memória.
 void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
     if(pos.pos_mapa > 1023){
         erro("Memória lotada");
@@ -392,6 +417,7 @@ void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
 
 }
 
+// Escreve em um instrução na memória.
 void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
     if(pos.pos_mapa > 1023){
         erro("Memória lotada");

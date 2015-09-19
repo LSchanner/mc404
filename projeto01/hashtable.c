@@ -42,13 +42,16 @@ int Espalha(String str) {
 /* Insere o Registro a em uma lista */ 
 bool InsereLista(Lista lista, Registro a){
 
+    Lista anterior = lista;
+    lista = lista->prox;
     // Procura o elemento na lista
-    while(strcmp(lista->reg.key,a.key) < 0 && lista->prox != NULL){
+    while(lista && strcmp(lista->reg.key,a.key) < 0){
+        anterior = lista;
         lista = lista->prox;
     }
 
     // Se o elemento já existe, ele é substituido
-    if(strcmp(lista->reg.key,a.key) == 0){
+    if(lista && strcmp(lista->reg.key,a.key) == 0){
         lista->reg.val = a.val;
         return false;
     }
@@ -59,8 +62,8 @@ bool InsereLista(Lista lista, Registro a){
         no->reg = a;
 
         /* Insere o registro na lista */
-        no->prox = lista->prox;
-        lista->prox = no;
+        no->prox = lista;
+        anterior->prox = no;
         return true;
     }
 }
