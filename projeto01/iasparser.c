@@ -396,7 +396,7 @@ int parse_num(String input){
 
     
 
-    return strtol(input,NULL,0);
+    return strtoll(input,NULL,0);
 }
 
 // Escreve em um palavra de memória.
