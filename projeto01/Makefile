@@ -32,4 +32,4 @@ clean:
 
 # -- Rule to make the executable ias-as
 ias-as: $(OBJ_FILES)
-	gcc -g $(OBJ_FILES) -o ias-as 
+	gcc -g -std=c99 $(OBJ_FILES) -o ias-as 

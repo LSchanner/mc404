@@ -410,7 +410,7 @@ void write_word(MemoryMap* map,PosicaoMontagem pos,long long data){
     if(map->map[pos.pos_mapa].used_esq || map->map[pos.pos_mapa].used_dir){
         erro(" Posição de memória já utilizada");
     }else{
-        map->map[pos.pos_mapa].dado = data;
+        map->map[pos.pos_mapa].bits.dado = data;
         map->map[pos.pos_mapa].used_dir = map->map[pos.pos_mapa].used_esq = true;
         map->map[pos.pos_mapa].is_data = true;
     }
@@ -427,7 +427,7 @@ void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
             erro(" Posição de memória já utilizada");
         }
         else{
-            map->map[pos.pos_mapa].instrucoes[0] = data;  
+            map->map[pos.pos_mapa].bits.instrucoes[0] = data;  
             map->map[pos.pos_mapa].used_esq = true;
         }
     }
@@ -436,7 +436,7 @@ void write_instruction(MemoryMap* map,PosicaoMontagem pos,long data){
             erro(" Posição de memória já utilizada");
         }
         else{
-            map->map[pos.pos_mapa].instrucoes[1] = data;  
+            map->map[pos.pos_mapa].bits.instrucoes[1] = data;  
             map->map[pos.pos_mapa].used_dir = true;
         }
     }
@@ -525,13 +525,13 @@ void printMemoryMap(MemoryMap object,FILE* target){
             if(object.map[i].is_data){
 
                 // essas operações bitwise servem para selecionar os bits mais significativos e menos signitficativos
-                long long data = object.map[i].dado;
+                long long data = object.map[i].bits.dado;
                 fprintf(target,"%02llX %03llX %02llX %03llX",data >> 32, (data >> 20) & 0xfff ,(data >> 12) & 0xff, data & 0xfff);
             }else{
 
                 // essas operações bitwise servem para selecionar os bits mais significativos e menos signitficativos
-                fprintf(target, "%02lX %03lX ",object.map[i].instrucoes[0] >> 12, object.map[i].instrucoes[0] & 0xfff);
-                fprintf(target, "%02lX %03lX",object.map[i].instrucoes[1] >> 12, object.map[i].instrucoes[1] & 0xfff);
+                fprintf(target, "%02lX %03lX ",object.map[i].bits.instrucoes[0] >> 12, object.map[i].bits.instrucoes[0] & 0xfff);
+                fprintf(target, "%02lX %03lX",object.map[i].bits.instrucoes[1] >> 12, object.map[i].bits.instrucoes[1] & 0xfff);
             }
             fprintf(target,"\n");
         }
