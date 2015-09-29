@@ -1,1 +1,0 @@
-inicio: .word 0x000000000D #teste 16

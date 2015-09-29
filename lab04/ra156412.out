@@ -1,0 +1,13 @@
+ArchC: Reading flat binary file: /home/specg12-1/mc404/simulador/dumboot.bin
+
+Info: (I804) /IEEE_Std_1666/deprecated: interface and/or port binding in port constructors is deprecated
+Dumboot Bootstrap v1.0 - ARM ArchC model at LSC-UNICAMP
+
+Boot Reason: [POR]
+Boot Device: [SD]
+MMC Initialized.
+
+Transfering control to loaded code at 0x778005e00...
+
+Booted DummyOS.
+Lucas_Schanner ra156412

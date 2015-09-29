@@ -1,2 +1,0 @@
-.set TEMP 0x0000000005
-.word TEMP

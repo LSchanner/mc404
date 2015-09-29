@@ -1,2 +1,0 @@
-.word DEZ
-.set DEZ 10

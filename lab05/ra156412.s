@@ -44,10 +44,28 @@ skip:
         cmp r2, #16           @ compara r2 com o tamanho da string binaria
         blt loop_c            @ se ainda esta com um valor menor que o tamanho da string
 
-@ -- multiplica o numero por 2
+@ -- calcula a sequencia de fibonnaci
 
-        mov r0, r0, LSL #1    @ multiplica por 2 o valor contido em r0
- 
+
+        mov r1, #1
+        mov r2, #1
+
+        cmp r0, #2
+        blt final_loop_fib
+        sub r0, #2
+
+loop_fib:
+        mov r3, r1
+        add r1, r1, r2
+        mov r2, r3
+        sub r0, #1
+        cmp r0, #0
+        bgt loop_fib
+
+final_loop_fib:
+
+        mov r0, r1
+
 @ -- converte o resultado (em r0) em uma sequencia de caracteres '0' e '1' no buffer string.
 
         ldr r1, =string       @ string  para preencher com string binaria
