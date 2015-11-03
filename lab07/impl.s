@@ -30,17 +30,21 @@ set_speed_motors:
 
 read_sonar:
     stmfd sp!, {r7, lr}  @ Save the callee-save registers
-    mv r7, #125
+    mov r7, #125
     svc 0x0
     ldmfd sp!, {r7, pc}  @ Restore the registers and return
 
 read_sonars:
-    stmfd sp!, {r4-r11, lr}  @ Save the callee-save registers
+    stmfd sp!, {r0-r11, lr}  @ Save the callee-save registers
     mov r2, r0
-    mov r0, #0
+    mov r1, #0
 loop_sonars:
-    mv r7, #125
+    mov r0, r1
+    mov r7, #125
     svc 0x0
+    str r0, [r2], #1
+    add r1, r1, #1
+    cmp r1, #16
+    bls loop_sonars
 
-
-    ldmfd sp!, {r4-r11, pc}  @ Restore the registers and return
+    ldmfd sp!, {r0-r11, pc}  @ Restore the registers and return
